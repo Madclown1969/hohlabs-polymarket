@@ -519,7 +519,7 @@
     
     async function fetchData() {
       try {
-        const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_BASE + '/events?limit=20&order=volume24hr&ascending=false')}`);
+        const response = await fetch(`${CORS_PROXY}events?limit=20&order=volume24hr&ascending=false`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
