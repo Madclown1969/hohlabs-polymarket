@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polymarket Monitor | Hoh Labs</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1a1a1a;
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --accent: #00d4aa;
+      --accent-dim: rgba(0, 212, 170, 0.1);
+      --up: #00ff88;
+      --down: #ff4444;
+      --border: #2a2a2a;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    
+    .logo span { color: var(--accent); }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .last-update { font-family: monospace; }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .stat-sub {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    
+    .section {
+      margin-bottom: 2rem;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .refresh-btn {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .refresh-btn:hover {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    
+    .markets-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+    
+    .market-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 1rem;
+      align-items: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .market-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-tertiary);
+    }
+    
+    .market-info h3 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 500px;
+    }
+    
+    .market-question {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 500px;
+    }
+    
+    .price-display {
+      text-align: right;
+    }
+    
+    .price-main {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .price-bid-ask {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    
+    .volume-display {
+      text-align: right;
+      min-width: 100px;
+    }
+    
+    .volume-value {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .volume-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    
+    .price-up { color: var(--up); }
+    .price-down { color: var(--down); }
+    
+    .alert-banner {
+      background: linear-gradient(90deg, var(--accent-dim), transparent);
+      border-left: 3px solid var(--accent);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 0 8px 8px 0;
+      display: none;
+    }
+    
+    .alert-banner.show { display: block; }
+    
+    .alert-title {
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    
+    .alert-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .alert-item:last-child { border-bottom: none; }
+    
+    .alert-change {
+      font-weight: 600;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text-secondary);
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .alerts-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    
+    .alerts-section.has-alerts { display: block; }
+    
+    .no-alerts {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 1rem;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    @media (max-width: 768px) {
+      .market-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      
+      .market-info h3, .market-question {
+        max-width: 100%;
+      }
+      
+      .price-display, .volume-display {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo">Hoh<span>Labs</span></a>
+    <div class="status">
+      <span class="status-dot"></span>
+      <span>Polymarket Live</span>
+      <span class="last-update">--</span>
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="alerts-section" id="alerts-section">
+      <div class="section-header">
+        <h2 class="section-title">🚨 Price Alerts</h2>
+      </div>
+      <div id="alerts-list"></div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Markets</div>
+        <div class="stat-value" id="stat-markets">--</div>
+        <div class="stat-sub">Accepting orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">24h Volume</div>
+        <div class="stat-value" id="stat-volume">--</div>
+        <div class="stat-sub">Top 50 markets</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Top Market</div>
+        <div class="stat-value" id="stat-top">--</div>
+        <div class="stat-sub" id="stat-top-vol">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Alert Threshold</div>
+        <div class="stat-value">5%</div>
+        <div class="stat-sub">Price movement</div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">🔥 Trending Markets</h2>
+        <button class="refresh-btn" onclick="fetchData()">↻ Refresh</button>
+      </div>
+      <div class="markets-grid" id="markets-list">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>Loading markets...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <p>Polymarket Monitor | Built by <a href="/">Hoh Labs</a></p>
+    <p>Data via Polymarket API | No trading advice</p>
+  </footer>
+  
+  <script>
+    const API_BASE = 'https://gamma-api.polymarket.com';
+    const ALERT_THRESHOLD = 0.05;
+    let previousPrices = {};
+    
+    function formatPrice(price) {
+      return (price * 100).toFixed(2) + '%';
+    }
+    
+    function formatCurrency(amount) {
+      if (amount >= 1000000) {
+        return '$' + (amount / 1000000).toFixed(1) + 'M';
+      } else if (amount >= 1000) {
+        return '$' + (amount / 1000).toFixed(0) + 'K';
+      }
+      return '$' + amount.toFixed(0);
+    }
+    
+    function formatTime() {
+      return new Date().toLocaleTimeString();
+    }
+    
+    function parseOutcomePrices(outcomePrices) {
+      if (!outcomePrices) return 0;
+      try {
+        const prices = typeof outcomePrices === 'string' 
+          ? JSON.parse(outcomePrices) 
+          : outcomePrices;
+        return parseFloat(prices[0] || 0);
+      } catch (e) {
+        return 0;
+      }
+    }
+    
+    function getPriceClass(price) {
+      if (price >= 0.9) return 'price-up';
+      if (price <= 0.1) return 'price-down';
+      return '';
+    }
+    
+    function extractActiveMarkets(events) {
+      const active = [];
+      for (const event of events) {
+        if (event.markets) {
+          for (const market of event.markets) {
+            if (market.acceptingOrders && !market.closed) {
+              const price = parseOutcomePrices(market.outcomePrices) || parseFloat(market.lastTradePrice || 0);
+              active.push({
+                id: market.id,
+                question: market.question,
+                title: event.title,
+                price,
+                bestBid: parseFloat(market.bestBid || 0),
+                bestAsk: parseFloat(market.bestAsk || 0),
+                spread: market.spread ? parseFloat(market.spread) : null,
+                volume24hr: market.volume24hr || 0,
+                volume: market.volumeNum || 0,
+                liquidity: market.liquidityNum || 0
+              });
+            }
+          }
+        }
+      }
+      return active;
+    }
+    
+    function checkAlerts(markets) {
+      const alerts = [];
+      for (const market of markets) {
+        const prev = previousPrices[market.id];
+        if (prev && prev.price > 0 && market.price > 0) {
+          const change = market.price - prev.price;
+          const changePct = Math.abs(change);
+          if (changePct >= ALERT_THRESHOLD) {
+            alerts.push({
+              ...market,
+              previousPrice: prev.price,
+              change,
+              changePct
+            });
+          }
+        }
+        previousPrices[market.id] = { price: market.price };
+      }
+      return alerts;
+    }
+    
+    function renderAlerts(alerts) {
+      const section = document.getElementById('alerts-section');
+      const list = document.getElementById('alerts-list');
+      
+      if (alerts.length === 0) {
+        section.classList.remove('has-alerts');
+        return;
+      }
+      
+      section.classList.add('has-alerts');
+      list.innerHTML = alerts.map(alert => `
+        <div class="alert-item">
+          <span>${alert.question.substring(0, 60)}...</span>
+          <span class="alert-change ${alert.change > 0 ? 'price-up' : 'price-down'}">
+            ${alert.change > 0 ? '📈' : '📉'} ${formatPrice(alert.previousPrice)} → ${formatPrice(alert.price)}
+          </span>
+        </div>
+      `).join('');
+    }
+    
+    function renderMarkets(markets) {
+      const container = document.getElementById('markets-list');
+      
+      container.innerHTML = markets.slice(0, 20).map(m => `
+        <div class="market-card" onclick="window.open('https://polymarket.com/market/${m.id}', '_blank')">
+          <div class="market-info">
+            <h3>${m.title}</h3>
+            <div class="market-question">${m.question}</div>
+          </div>
+          <div class="price-display">
+            <div class="price-main ${getPriceClass(m.price)}">${formatPrice(m.price)}</div>
+            <div class="price-bid-ask">Bid: ${formatPrice(m.bestBid)} | Ask: ${formatPrice(m.bestAsk)}</div>
+          </div>
+          <div class="volume-display">
+            <div class="volume-value">${formatCurrency(m.volume24hr)}</div>
+            <div class="volume-label">24h Vol</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function updateStats(markets) {
+      const totalVolume = markets.reduce((sum, m) => sum + (m.volume24hr || 0), 0);
+      const topMarket = markets[0];
+      
+      document.getElementById('stat-markets').textContent = markets.length.toLocaleString();
+      document.getElementById('stat-volume').textContent = formatCurrency(totalVolume);
+      document.getElementById('stat-top').textContent = topMarket ? formatPrice(topMarket.price) : '--';
+      document.getElementById('stat-top-vol').textContent = topMarket ? formatCurrency(topMarket.volume24hr) + ' 24h' : '--';
+      document.querySelector('.last-update').textContent = formatTime();
+    }
+    
+    async function fetchData() {
+      try {
+        const response = await fetch(`${API_BASE}/events?limit=50&order=volume24hr&ascending=false`);
+        const events = await response.json();
+        
+        const markets = extractActiveMarkets(events);
+        markets.sort((a, b) => b.volume24hr - a.volume24hr);
+        
+        const alerts = checkAlerts(markets);
+        
+        updateStats(markets);
+        renderAlerts(alerts);
+        renderMarkets(markets);
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('markets-list').innerHTML = `
+          <div class="loading">
+            <p style="color: var(--down);">Error loading data: ${error.message}</p>
+            <button class="refresh-btn" onclick="fetchData()" style="margin-top: 1rem;">Try Again</button>
+          </div>
+        `;
+      }
+    }
+    
+    // Initial load
+    fetchData();
+    
+    // Auto-refresh every 60 seconds
+    setInterval(fetchData, 60000);
+  </script>
+</body>
+</html>
