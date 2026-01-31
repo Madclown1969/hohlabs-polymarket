@@ -520,9 +520,20 @@
     async function fetchData() {
       try {
         const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_BASE + '/events?limit=50&order=volume24hr&ascending=false')}`);
-        const events = await response.json();
         
-        const markets = extractActiveMarkets(events);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Validate response is an array
+        if (!Array.isArray(data)) {
+          console.error('Unexpected response format:', data);
+          throw new Error('Invalid data format - expected array');
+        }
+        
+        const markets = extractActiveMarkets(data);
         markets.sort((a, b) => b.volume24hr - a.volume24hr);
         
         const alerts = checkAlerts(markets);
@@ -536,9 +547,11 @@
         document.getElementById('markets-list').innerHTML = `
           <div class="loading">
             <p style="color: var(--down);">Error loading data: ${error.message}</p>
-            <button class="refresh-btn" onclick="fetchData()" style="margin-top: 1rem;">Try Again</button>
+            <p style="color: var(--text-secondary); font-size: 0.8rem;">Retrying in 10 seconds...</p>
           </div>
         `;
+        // Auto-retry after 10 seconds
+        setTimeout(fetchData, 10000);
       }
     }
     
