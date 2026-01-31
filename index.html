@@ -556,10 +556,26 @@
     }
     
     // Initial load
+    showLoading(true);
     fetchData();
     
     // Auto-refresh every 60 seconds
-    setInterval(fetchData, 60000);
+    setInterval(() => {
+      showLoading(true);
+      fetchData();
+    }, 60000);
+    
+    function showLoading(isLoading) {
+      const container = document.getElementById('markets-list');
+      if (isLoading) {
+        container.innerHTML = `
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading markets...</p>
+          </div>
+        `;
+      }
+    }
   </script>
 </body>
 </html>
