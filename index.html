@@ -379,7 +379,7 @@
   
   <script>
     const API_BASE = 'https://gamma-api.polymarket.com';
-    const CORS_PROXY = 'https://corsproxy.io/?';
+    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
     const ALERT_THRESHOLD = 0.05;
     let previousPrices = {};
     
@@ -519,7 +519,7 @@
     
     async function fetchData() {
       try {
-        const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_BASE + '/events?limit=50&order=volume24hr&ascending=false')}`);
+        const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_BASE + '/events?limit=20&order=volume24hr&ascending=false')}`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
